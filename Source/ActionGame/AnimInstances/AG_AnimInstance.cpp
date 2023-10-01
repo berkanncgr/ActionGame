@@ -35,6 +35,7 @@ void UAG_AnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	GroundSpeed = UKismetMathLibrary::VSizeXY(Velocity);
 	bIsFalling = MovementComponent->IsFalling();
 	bShouldMove = GroundSpeed > 3 && MovementComponent->GetCurrentAcceleration() != FVector::ZeroVector;
+	bIsCrouching = MovementComponent->IsCrouching();
 }
 
 UBlendSpace* UAG_AnimInstance::GetLocomotionBlendSpace() const
@@ -71,4 +72,40 @@ UAnimSequenceBase* UAG_AnimInstance::GetIdleAnimation() const
 	}
 
 	return Data.CharacterAnimDataAsset->CharacterAnimationData.IdleAnimationAsset;
+}
+
+UBlendSpace* UAG_AnimInstance::GetCrouchLocomotionBlendSpace() const
+{
+	if(!Character)
+	{
+		UE_LOG(LogTemp,Error,TEXT("Character is NULL - UAG_AnimInstance::GetLocomotionBlendSpace"))
+		return DefaultCharacterAnimDataAsset->CharacterAnimationData.CrouchMovementBlendSpace;
+	}
+
+	FCharacterData Data = Character->GetCharacterData();
+	if(!Data.CharacterAnimDataAsset)
+	{
+		UE_LOG(LogTemp,Error,TEXT("Data.CharacterAnimDataAsset is NULL - UAG_AnimInstance::GetLocomotionBlendSpace"))
+		return DefaultCharacterAnimDataAsset->CharacterAnimationData.CrouchMovementBlendSpace;
+	}
+
+	return Data.CharacterAnimDataAsset->CharacterAnimationData.CrouchMovementBlendSpace;
+}
+
+UAnimSequenceBase* UAG_AnimInstance::GetCrouchIdleAnimation() const
+{
+	if(!Character)
+	{
+		UE_LOG(LogTemp,Error,TEXT("Character is NULL - UAG_AnimInstance::GetLocomotionBlendSpace"))
+		return DefaultCharacterAnimDataAsset->CharacterAnimationData.CrouchIdleAnimationAsset;
+	}
+
+	FCharacterData Data = Character->GetCharacterData();
+	if(!Data.CharacterAnimDataAsset)
+	{
+		UE_LOG(LogTemp,Error,TEXT("Data.CharacterAnimDataAsset is NULL - UAG_AnimInstance::GetLocomotionBlendSpace"))
+		return DefaultCharacterAnimDataAsset->CharacterAnimationData.CrouchIdleAnimationAsset;
+	}
+
+	return Data.CharacterAnimDataAsset->CharacterAnimationData.CrouchIdleAnimationAsset;
 }

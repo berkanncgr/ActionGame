@@ -190,9 +190,6 @@ void AActionGameCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 	UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent);
 	if(!EnhancedInputComponent) return;
 
-	//Jumping
-	EnhancedInputComponent->BindAction(IA_Jump, ETriggerEvent::Started, this, &AActionGameCharacter::JumpStart);
-	EnhancedInputComponent->BindAction(IA_Jump, ETriggerEvent::Completed, this, &AActionGameCharacter::JumpEnd);
 
 	//Moving
 	EnhancedInputComponent->BindAction(IA_MoveForward, ETriggerEvent::Triggered, this, &AActionGameCharacter::MoveForward);
@@ -202,7 +199,13 @@ void AActionGameCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 	EnhancedInputComponent->BindAction(IA_LookUp, ETriggerEvent::Triggered, this, &AActionGameCharacter::LookUp);
 	EnhancedInputComponent->BindAction(IA_Turn, ETriggerEvent::Triggered, this, &AActionGameCharacter::Turn);
 
-	
+	//Jumping
+	EnhancedInputComponent->BindAction(IA_Jump, ETriggerEvent::Started, this, &AActionGameCharacter::JumpStart);
+	EnhancedInputComponent->BindAction(IA_Jump, ETriggerEvent::Completed, this, &AActionGameCharacter::JumpEnd);
+
+	//Jumping
+	EnhancedInputComponent->BindAction(IA_Crouch, ETriggerEvent::Started, this, &AActionGameCharacter::OnCrouchStart);
+	EnhancedInputComponent->BindAction(IA_Crouch, ETriggerEvent::Completed, this, &AActionGameCharacter::OnCrouchEnd);
 }
 
 
@@ -252,13 +255,12 @@ void AActionGameCharacter::LookUp(const FInputActionValue& Value)
 
 void AActionGameCharacter::Turn(const FInputActionValue& Value)
 {
-	
 	AddControllerYawInput(Value.GetMagnitude() * TurnRateGamepad * GetWorld()->GetDeltaSeconds());
 }
 
 void AActionGameCharacter::JumpStart(const FInputActionValue& Value)
 {
-	/* Old Stle */ // Super::Jump();
+	/* Old Style */ // Super::Jump();
 
 	FGameplayEventData PayLoad;
 	PayLoad.Instigator = this;
@@ -269,9 +271,17 @@ void AActionGameCharacter::JumpStart(const FInputActionValue& Value)
 
 void AActionGameCharacter::JumpEnd(const FInputActionValue& Value)
 {
-	/* Old Stle */ //  Super::StopJumping();
+	/* Old Style */ //  Super::StopJumping();
+}
 
-	
+void AActionGameCharacter::OnCrouchStart(const FInputActionValue& Value)
+{
+	AbilitySystemComponent->TryActivateAbilitiesByTag(CrouchTags);	
+}
+
+void AActionGameCharacter::OnCrouchEnd(const FInputActionValue& Value)
+{
+	AbilitySystemComponent->CancelAbilities(&CrouchTags);
 }
 
 #pragma endregion Input
@@ -346,6 +356,30 @@ void AActionGameCharacter::Landed(const FHitResult& Hit)
 	if(!AbilitySystemComponent) return;
 
 	AbilitySystemComponent->RemoveActiveEffectsWithTags(InAirTags);
+}
+
+void AActionGameCharacter::OnStartCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust)
+{
+	Super::OnStartCrouch(HalfHeightAdjust, ScaledHalfHeightAdjust);
+
+	if(!CrouchStateEffect.Get()) return;
+
+	FGameplayEffectContextHandle EffectContext = AbilitySystemComponent->MakeEffectContext();
+	FGameplayEffectSpecHandle SpecHandle = AbilitySystemComponent->MakeOutgoingSpec(CrouchStateEffect,1,EffectContext);
+	if(!SpecHandle.IsValid()) return;
+
+	FActiveGameplayEffectHandle ActiveGEHandle = AbilitySystemComponent->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
+	if(!ActiveGEHandle.WasSuccessfullyApplied())
+	{
+		UE_LOG(LogTemp,Error,TEXT("ActiveGEHandle FAILED-> AActionGameCharacter::OnStartCrouch")); return;
+	}
+	
+}
+
+void AActionGameCharacter::OnEndCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust)
+{
+	AbilitySystemComponent->RemoveActiveGameplayEffectBySourceEffect(CrouchStateEffect,AbilitySystemComponent);
+	Super::OnEndCrouch(HalfHeightAdjust, ScaledHalfHeightAdjust);
 }
 
 #pragma endregion UEDEFAULTS

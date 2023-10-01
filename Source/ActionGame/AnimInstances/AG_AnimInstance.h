@@ -31,31 +31,40 @@ protected:
 	UFUNCTION(BlueprintCallable, meta=(BlueprintThreadSafe))
 	UAnimSequenceBase* GetIdleAnimation() const;
 
+	UFUNCTION(BlueprintCallable, meta=(BlueprintThreadSafe))
+	UBlendSpace* GetCrouchLocomotionBlendSpace() const;
+
+	UFUNCTION(BlueprintCallable, meta=(BlueprintThreadSafe))
+	UAnimSequenceBase* GetCrouchIdleAnimation() const;
+
 	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category=Animaiton)
 	class UCharacterAnimDataAsset* DefaultCharacterAnimDataAsset;
 	
-	UPROPERTY(VisibleAnywhere,BlueprintReadWrite)
+	UPROPERTY(BlueprintReadWrite)
 	class AActionGameCharacter* Character;
 	
-	UPROPERTY(EditDefaultsOnly,BlueprintReadWrite)
+	UPROPERTY(BlueprintReadWrite)
 	float Side;
 
-	UPROPERTY(EditDefaultsOnly,BlueprintReadWrite)
+	UPROPERTY(BlueprintReadWrite)
 	float Forward;
 
-	UPROPERTY(EditDefaultsOnly,BlueprintReadWrite)
+	UPROPERTY(BlueprintReadWrite)
 	FVector Velocity;
 
-	UPROPERTY(EditDefaultsOnly,BlueprintReadWrite)
+	UPROPERTY(BlueprintReadWrite)
 	float GroundSpeed;
 
-	UPROPERTY(EditDefaultsOnly,BlueprintReadWrite)
+	UPROPERTY(BlueprintReadWrite)
 	bool bShouldMove;
 
-	UPROPERTY(EditDefaultsOnly,BlueprintReadWrite)
+	UPROPERTY(BlueprintReadWrite)
 	bool bIsInGround;
 
-	UPROPERTY(EditDefaultsOnly,BlueprintReadWrite)
+	UPROPERTY(BlueprintReadWrite)
 	bool bIsFalling;
+
+	UPROPERTY(BlueprintReadWrite)
+	bool bIsCrouching;
 
 };

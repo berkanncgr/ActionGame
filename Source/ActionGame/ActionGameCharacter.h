@@ -79,13 +79,13 @@ protected:
 
 #pragma region Input
 
-	UPROPERTY(EditDefaultsOnly,BlueprintReadWrite)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	class UInputMappingContext* DefaultInputMappingContext;
 
-	UPROPERTY(EditDefaultsOnly,BlueprintReadWrite)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	UInputAction* IA_MoveForward;
 
-	UPROPERTY(EditDefaultsOnly,BlueprintReadWrite)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	UInputAction* IA_MoveRight;
 
 	UPROPERTY(EditDefaultsOnly,BlueprintReadWrite)
@@ -97,6 +97,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly,BlueprintReadWrite)
 	UInputAction* IA_Jump;
 
+	UPROPERTY(EditDefaultsOnly,BlueprintReadWrite)
+	UInputAction* IA_Crouch;
+
 	UPROPERTY(EditAnywhere,BlueprintReadWrite)
 	float TurnRateGamepad = 20;
 
@@ -106,6 +109,8 @@ protected:
 	void Turn(const FInputActionValue& Value);
 	void JumpStart(const FInputActionValue& Value);
 	void JumpEnd(const FInputActionValue& Value);
+	void OnCrouchStart(const FInputActionValue& Value);
+	void OnCrouchEnd(const FInputActionValue& Value);
 
 #pragma endregion Input
 
@@ -118,23 +123,23 @@ protected:
 	/** Follow camera */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UCameraComponent* FollowCamera;
-
 	
 	// MappingContext 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	class UInputMappingContext* DefaultMappingContext;
+	UInputMappingContext* DefaultMappingContext;
 
 	// /** Jump Input Action 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	class UInputAction* JumpAction;
+	UPROPERTY(BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* JumpAction;
+
 
 	// /** Move Input Action
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	class UInputAction* MoveAction;
+	UPROPERTY(BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	 UInputAction* MoveAction;
 
 	// /** Look Input Action
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	class UInputAction* LookAction;
+	UPROPERTY(BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* LookAction;
 	
 	// /** Called for movement input
 	void Move(const FInputActionValue& Value);
@@ -152,6 +157,9 @@ protected:
 
 	virtual void Landed(const FHitResult& Hit) override;
 
+	virtual void OnStartCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust) override;
+	virtual void OnEndCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust) override;
+
 public:
 	
 	/** Returns CameraBoom subobject **/
@@ -166,5 +174,11 @@ public:
 
 	UPROPERTY(EditDefaultsOnly)
 	FGameplayTagContainer InAirTags;
+
+	UPROPERTY(EditDefaultsOnly)
+	FGameplayTagContainer CrouchTags;
+
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<UGameplayEffect> CrouchStateEffect;
 };
 

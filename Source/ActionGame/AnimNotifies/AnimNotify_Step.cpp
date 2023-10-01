@@ -8,11 +8,11 @@ void UAnimNotify_Step::Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBas
 {
 	Super::Notify(MeshComp, Animation);
 
-	if(!Character)
+	/*if(!Character)
 	{
 		Character = Cast<ICharacterInterface>(MeshComp->GetOwner());
 		if(!Character) return;
 	}
 
-	if(Character) Character->HandleFootstep(Foot);
+	if(Character) Character->HandleFootstep(Foot);*/
 }

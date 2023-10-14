@@ -63,6 +63,7 @@ Super(ObjectInitializer.SetDefaultSubobjectClass<UAG_CharacterMovementComponent>
 	AbilitySystemComponent = CreateDefaultSubobject<UAG_AbilitySystemComponentBase>(TEXT("AbilitySystemComponent"));
 	AbilitySystemComponent->SetIsReplicated(true);
 	AbilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Mixed);
+	AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(AttributeSet->GetMaxMovementSpeedAttribute()).AddUObject(this,&AActionGameCharacter::OnMaxMovementSpeedChange);
 
 	AttributeSet = CreateDefaultSubobject<UAG_AttributeSetBase>(TEXT("AttributeSet"));
 
@@ -203,9 +204,13 @@ void AActionGameCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 	EnhancedInputComponent->BindAction(IA_Jump, ETriggerEvent::Started, this, &AActionGameCharacter::JumpStart);
 	EnhancedInputComponent->BindAction(IA_Jump, ETriggerEvent::Completed, this, &AActionGameCharacter::JumpEnd);
 
-	//Jumping
+	//Crouching
 	EnhancedInputComponent->BindAction(IA_Crouch, ETriggerEvent::Started, this, &AActionGameCharacter::OnCrouchStart);
 	EnhancedInputComponent->BindAction(IA_Crouch, ETriggerEvent::Completed, this, &AActionGameCharacter::OnCrouchEnd);
+
+	//Sprinting
+	EnhancedInputComponent->BindAction(IA_Sprint, ETriggerEvent::Started, this, &AActionGameCharacter::OnSprintStart);
+	EnhancedInputComponent->BindAction(IA_Sprint, ETriggerEvent::Completed, this, &AActionGameCharacter::OnSprintEnd);
 }
 
 
@@ -284,9 +289,66 @@ void AActionGameCharacter::OnCrouchEnd(const FInputActionValue& Value)
 	AbilitySystemComponent->CancelAbilities(&CrouchTags);
 }
 
+void AActionGameCharacter::Landed(const FHitResult& Hit)
+{
+	Super::Landed(Hit);
+
+	if(!AbilitySystemComponent) return;
+
+	AbilitySystemComponent->RemoveActiveEffectsWithTags(InAirTags);
+}
+
+void AActionGameCharacter::OnStartCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust)
+{
+	Super::OnStartCrouch(HalfHeightAdjust, ScaledHalfHeightAdjust);
+
+	if(!CrouchStateEffect.Get()) return;
+
+	FGameplayEffectContextHandle EffectContext = AbilitySystemComponent->MakeEffectContext();
+	FGameplayEffectSpecHandle SpecHandle = AbilitySystemComponent->MakeOutgoingSpec(CrouchStateEffect,1,EffectContext);
+	if(!SpecHandle.IsValid()) return;
+
+	FActiveGameplayEffectHandle ActiveGEHandle = AbilitySystemComponent->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
+	if(!ActiveGEHandle.WasSuccessfullyApplied())
+	{
+		UE_LOG(LogTemp,Error,TEXT("ActiveGEHandle FAILED-> AActionGameCharacter::OnStartCrouch")); return;
+	}
+	
+}
+
+void AActionGameCharacter::OnEndCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust)
+{
+	AbilitySystemComponent->RemoveActiveGameplayEffectBySourceEffect(CrouchStateEffect,AbilitySystemComponent);
+	Super::OnEndCrouch(HalfHeightAdjust, ScaledHalfHeightAdjust);
+}
+
+void AActionGameCharacter::OnSprintStart(const FInputActionValue& InputActionValue)
+{
+	AbilitySystemComponent->TryActivateAbilitiesByTag(SprintTags);	
+}
+
+void AActionGameCharacter::OnSprintEnd(const FInputActionValue& InputActionValue)
+{
+	AbilitySystemComponent->CancelAbilities(&SprintTags);
+}
+
+void AActionGameCharacter::OnMaxMovementSpeedChange(const FOnAttributeChangeData& AttributeData)
+{
+	// Syncing data value and CharacterMovementComponent value.
+	GetCharacterMovement()->MaxWalkSpeed = AttributeData.NewValue;
+}
+
+
 #pragma endregion Input
 
 #pragma region UEDEFAULTS
+
+void AActionGameCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(AActionGameCharacter,CharacterData)
+	
+}
 
 /*
 void AActionGameCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
@@ -305,7 +367,7 @@ void AActionGameCharacter::SetupPlayerInputComponent(class UInputComponent* Play
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AActionGameCharacter::Look);
 	}
 }
-*/
+
 
 void AActionGameCharacter::Move(const FInputActionValue& Value)
 {
@@ -342,44 +404,8 @@ void AActionGameCharacter::Look(const FInputActionValue& Value)
 		AddControllerPitchInput(LookAxisVector.Y);
 	}
 } 
-void AActionGameCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
-{
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	DOREPLIFETIME(AActionGameCharacter,CharacterData)
-	
-}
 
-void AActionGameCharacter::Landed(const FHitResult& Hit)
-{
-	Super::Landed(Hit);
 
-	if(!AbilitySystemComponent) return;
-
-	AbilitySystemComponent->RemoveActiveEffectsWithTags(InAirTags);
-}
-
-void AActionGameCharacter::OnStartCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust)
-{
-	Super::OnStartCrouch(HalfHeightAdjust, ScaledHalfHeightAdjust);
-
-	if(!CrouchStateEffect.Get()) return;
-
-	FGameplayEffectContextHandle EffectContext = AbilitySystemComponent->MakeEffectContext();
-	FGameplayEffectSpecHandle SpecHandle = AbilitySystemComponent->MakeOutgoingSpec(CrouchStateEffect,1,EffectContext);
-	if(!SpecHandle.IsValid()) return;
-
-	FActiveGameplayEffectHandle ActiveGEHandle = AbilitySystemComponent->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
-	if(!ActiveGEHandle.WasSuccessfullyApplied())
-	{
-		UE_LOG(LogTemp,Error,TEXT("ActiveGEHandle FAILED-> AActionGameCharacter::OnStartCrouch")); return;
-	}
-	
-}
-
-void AActionGameCharacter::OnEndCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust)
-{
-	AbilitySystemComponent->RemoveActiveGameplayEffectBySourceEffect(CrouchStateEffect,AbilitySystemComponent);
-	Super::OnEndCrouch(HalfHeightAdjust, ScaledHalfHeightAdjust);
-}
+*/
 
 #pragma endregion UEDEFAULTS

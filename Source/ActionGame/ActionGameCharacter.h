@@ -10,12 +10,14 @@
 #include "InputActionValue.h"
 #include "Abilities/GameplayAbility.h"
 #include "Interfaces/CharacterInterface.h"
+#include "GameplayEffectTypes.h"
 #include "ActionGameCharacter.generated.h"
 
 class UAG_AbilitySystemComponentBase;
 class UAG_AttributeSetBase;
 class UGameplayEffect;
 class UGameplayAbility;
+
 
 UCLASS(config=Game)
 class AActionGameCharacter : public ACharacter, public IAbilitySystemInterface, public ICharacterInterface
@@ -100,8 +102,12 @@ protected:
 	UPROPERTY(EditDefaultsOnly,BlueprintReadWrite)
 	UInputAction* IA_Crouch;
 
+	UPROPERTY(EditDefaultsOnly,BlueprintReadWrite)
+	UInputAction* IA_Sprint;
+
 	UPROPERTY(EditAnywhere,BlueprintReadWrite)
 	float TurnRateGamepad = 20;
+
 
 	void MoveForward(const FInputActionValue& Value);
 	void MoveRight(const FInputActionValue& Value);
@@ -142,10 +148,11 @@ protected:
 	UInputAction* LookAction;
 	
 	// /** Called for movement input
-	void Move(const FInputActionValue& Value);
+	//void Move(const FInputActionValue& Value);
 
 	// /** Called for looking input
-	void Look(const FInputActionValue& Value); 
+	//void Look(const FInputActionValue& Value);
+
 
 	// // APawn interface
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
@@ -156,9 +163,14 @@ protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	virtual void Landed(const FHitResult& Hit) override;
-
 	virtual void OnStartCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust) override;
 	virtual void OnEndCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust) override;
+
+	void OnSprintStart(const FInputActionValue& InputActionValue);
+	void OnSprintEnd(const FInputActionValue& InputActionValue);
+
+	/**Triggers when start or stop sprinting. */
+	void OnMaxMovementSpeedChange(const FOnAttributeChangeData& AttributeData);
 
 public:
 	
@@ -177,6 +189,11 @@ public:
 
 	UPROPERTY(EditDefaultsOnly)
 	FGameplayTagContainer CrouchTags;
+
+	UPROPERTY(EditDefaultsOnly)
+	FGameplayTagContainer SprintTags;
+
+	FDelegateHandle OnMaxMovementSpeedChangeDelegate;
 
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<UGameplayEffect> CrouchStateEffect;

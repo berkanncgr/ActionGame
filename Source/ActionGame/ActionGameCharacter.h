@@ -15,6 +15,8 @@
 
 class UAG_AbilitySystemComponentBase;
 class UAG_AttributeSetBase;
+class UAG_MotionWarpingComponent;
+class UAG_CharacterMovementComponent;
 class UGameplayEffect;
 class UGameplayAbility;
 
@@ -31,14 +33,15 @@ public:
 	bool ApplyGameplayEffectToSelf(TSubclassOf<UGameplayEffect> Effect, FGameplayEffectContextHandle InEffectContext);
 	
 	UFUNCTION(BlueprintCallable)
-	FORCEINLINE FCharacterData GetCharacterData() const
-	{ return CharacterData;}
+	FORCEINLINE FCharacterData GetCharacterData() const { return CharacterData;}
 
 	UFUNCTION(BlueprintCallable)
 	void SetCharacterData(const FCharacterData& InData);
+	
+	FORCEINLINE virtual USkeletalMeshComponent* GetSkeletalMesh() const override { return GetMesh(); }
 
-	FORCEINLINE virtual USkeletalMeshComponent* GetSkeletalMesh() const override
-	{ return GetMesh(); }
+	UFUNCTION(BlueprintCallable)
+	FORCEINLINE UAG_MotionWarpingComponent* GetMotionWarpingComponent() const {return MotionWarpingComponent;}
 
 	virtual void HandleFootstep(EFoot Foot) override;
 
@@ -75,6 +78,12 @@ protected:
 	
 	UPROPERTY(EditDefaultsOnly)
 	UAG_AbilitySystemComponentBase* AbilitySystemComponent;
+	
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category = "Motion Warp")
+	UAG_MotionWarpingComponent* MotionWarpingComponent;
+
+	UPROPERTY(EditDefaultsOnly)
+	UAG_CharacterMovementComponent* CharacterMovementComponent;
 
 	UPROPERTY(Transient)
 	UAG_AttributeSetBase* AttributeSet;

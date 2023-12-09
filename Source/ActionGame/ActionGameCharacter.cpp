@@ -5,7 +5,6 @@
 #include "Components/CapsuleComponent.h"
 #include "Components/InputComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
-//#include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
@@ -17,7 +16,7 @@
 #include "DataAssets/CharacterDataAsset.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Net/UnrealNetwork.h"
-#include "AbilitySystemBlueprintLibrary.h"
+#include "ActorComponents/AG_MotionWarpingComponent.h"
 
 AActionGameCharacter::AActionGameCharacter(const FObjectInitializer& ObjectInitializer):
 Super(ObjectInitializer.SetDefaultSubobjectClass<UAG_CharacterMovementComponent>(ACharacter::CharacterMovementComponentName))
@@ -66,8 +65,9 @@ Super(ObjectInitializer.SetDefaultSubobjectClass<UAG_CharacterMovementComponent>
 	AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(AttributeSet->GetMaxMovementSpeedAttribute()).AddUObject(this,&AActionGameCharacter::OnMaxMovementSpeedChange);
 
 	AttributeSet = CreateDefaultSubobject<UAG_AttributeSetBase>(TEXT("AttributeSet"));
-
+	CharacterMovementComponent = Cast<UAG_CharacterMovementComponent>(GetCharacterMovement());
 	FootStepsComponent = CreateDefaultSubobject<UFootStepsComponent>(TEXT("FootStepsComponent"));
+	MotionWarpingComponent = CreateDefaultSubobject<UAG_MotionWarpingComponent>(TEXT("MotionWarpingComponent"));
 }
 
 
@@ -265,13 +265,14 @@ void AActionGameCharacter::Turn(const FInputActionValue& Value)
 
 void AActionGameCharacter::JumpStart(const FInputActionValue& Value)
 {
-	/* Old Style */ // Super::Jump();
+	/* Default Unreal Style */ // Super::Jump();
 
+	/* // Old Style 
 	FGameplayEventData PayLoad;
-	PayLoad.Instigator = this;
-	PayLoad.EventTag = JumpEventTag;
-	
-	UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(this,JumpEventTag,PayLoad);
+	PayLoad.Instigator = this; PayLoad.EventTag = JumpEventTag;
+	UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(this,JumpEventTag,PayLoad); */
+
+	CharacterMovementComponent->TryTraversal(AbilitySystemComponent);
 }
 
 void AActionGameCharacter::JumpEnd(const FInputActionValue& Value)
